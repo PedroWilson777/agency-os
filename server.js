@@ -172,20 +172,28 @@ app.post('/api/run', async (req, res) => {
     userContent = message
   }
 
-  // Retry com backoff para overloaded_error (até 3 tentativas)
-  const MAX_RETRIES = 3
+  // Modelos por agente: site/brand usam sonnet, resto usa haiku (mais rápido)
+  const SONNET_AGENTS = ['site-builder-auto', 'brand-designer', 'content-writer', 'marketing-automation']
+  const MODELS = [
+    SONNET_AGENTS.includes(agentId) ? 'claude-sonnet-4-6' : 'claude-haiku-4-5-20251001',
+    'claude-haiku-4-5-20251001',   // fallback 1
+    'claude-sonnet-4-6'            // fallback 2
+  ]
+
+  const MAX_RETRIES = MODELS.length
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    const model = MODELS[attempt - 1]
     try {
       if (attempt > 1) {
-        const wait = attempt * 4000
-        send({ type: 'delta', text: `\n\n⏳ API sobrecarregada. Tentativa ${attempt}/${MAX_RETRIES} em ${wait/1000}s...\n\n` })
+        const wait = 3000
+        send({ type: 'delta', text: `⏳ Tentando modelo alternativo (${attempt}/${MAX_RETRIES})...\n\n` })
         await new Promise(r => setTimeout(r, wait))
-        fullResult = '' // reset antes de tentar de novo
+        fullResult = ''
       }
 
       const stream = await claude.messages.stream({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 4096,
+        model,
+        max_tokens: agentId === 'site-builder-auto' ? 8192 : 4096,
         system: systemPrompt,
         messages: [{ role: 'user', content: userContent }]
       })
@@ -197,11 +205,43 @@ app.post('/api/run', async (req, res) => {
         }
       }
 
-      // Sucesso — salva e sai do loop
+      // Sucesso — salva
       const all = readTasks()
       const idx = all.findIndex(t => t.id === taskId)
       if (idx !== -1) { all[idx].result = fullResult; all[idx].status = 'completed'; all[idx].finished_at = new Date().toISOString() }
       writeTasks(all)
+
+      // Se for site-builder, tenta extrair HTML e fazer deploy no Vercel
+      if (agentId === 'site-builder-auto' && process.env.VERCEL_TOKEN) {
+        try {
+          const htmlMatch = fullResult.match(/```html\n([\s\S]*?)```/) || fullResult.match(/<!DOCTYPE html[\s\S]*?<\/html>/i)
+          const htmlContent = htmlMatch ? (htmlMatch[1] || htmlMatch[0]) : null
+          if (htmlContent) {
+            send({ type: 'delta', text: '\n\n---\n🚀 **Fazendo deploy no Vercel automaticamente...**\n' })
+            const siteName = (clientName || 'site-agencia-ia').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '').slice(0, 40)
+            const deployRes = await fetch('https://api.vercel.com/v13/deployments', {
+              method: 'POST',
+              headers: { Authorization: `Bearer ${process.env.VERCEL_TOKEN}`, 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                name: `${siteName}-${Date.now()}`,
+                files: [{ file: 'index.html', data: htmlContent }],
+                projectSettings: { framework: null },
+                target: 'production'
+              })
+            })
+            const deployData = await deployRes.json()
+            if (deployData.url) {
+              const siteUrl = `https://${deployData.url}`
+              send({ type: 'delta', text: `✅ **Site no ar!**\n\n🔗 [${siteUrl}](${siteUrl})\n\nCompartilhe esse link com o cliente — o site já está funcionando!` })
+              if (idx !== -1) { all[idx].site_url = siteUrl; all[idx].result += `\n\nSite deployado: ${siteUrl}` }
+              writeTasks(all)
+            }
+          }
+        } catch (vercelErr) {
+          console.error('Vercel deploy error:', vercelErr.message)
+        }
+      }
+
       send({ type: 'done', taskId })
       break
 
