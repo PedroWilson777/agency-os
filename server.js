@@ -161,47 +161,70 @@ app.post('/api/run', async (req, res) => {
 
   let fullResult = ''
 
-  try {
-    const systemPrompt = clientName ? `${agent.system}\n\nCliente atual: ${clientName}` : agent.system
+  const systemPrompt = clientName ? `${agent.system}\n\nCliente atual: ${clientName}` : agent.system
+  let userContent
+  if (image && image.data) {
+    userContent = [
+      { type: 'image', source: { type: 'base64', media_type: image.mediaType || 'image/jpeg', data: image.data } },
+      { type: 'text', text: message || 'Analise essa imagem.' }
+    ]
+  } else {
+    userContent = message
+  }
 
-    // Build message content — support image
-    let userContent
-    if (image && image.data) {
-      userContent = [
-        { type: 'image', source: { type: 'base64', media_type: image.mediaType || 'image/jpeg', data: image.data } },
-        { type: 'text', text: message || 'Analise essa imagem.' }
-      ]
-    } else {
-      userContent = message
-    }
-
-    const stream = await claude.messages.stream({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 4096,
-      system: systemPrompt,
-      messages: [{ role: 'user', content: userContent }]
-    })
-
-    for await (const chunk of stream) {
-      if (chunk.type === 'content_block_delta' && chunk.delta?.text) {
-        fullResult += chunk.delta.text
-        send({ type: 'delta', text: chunk.delta.text })
+  // Retry com backoff para overloaded_error (até 3 tentativas)
+  const MAX_RETRIES = 3
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      if (attempt > 1) {
+        const wait = attempt * 4000
+        send({ type: 'delta', text: `\n\n⏳ API sobrecarregada. Tentativa ${attempt}/${MAX_RETRIES} em ${wait/1000}s...\n\n` })
+        await new Promise(r => setTimeout(r, wait))
+        fullResult = '' // reset antes de tentar de novo
       }
+
+      const stream = await claude.messages.stream({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 4096,
+        system: systemPrompt,
+        messages: [{ role: 'user', content: userContent }]
+      })
+
+      for await (const chunk of stream) {
+        if (chunk.type === 'content_block_delta' && chunk.delta?.text) {
+          fullResult += chunk.delta.text
+          send({ type: 'delta', text: chunk.delta.text })
+        }
+      }
+
+      // Sucesso — salva e sai do loop
+      const all = readTasks()
+      const idx = all.findIndex(t => t.id === taskId)
+      if (idx !== -1) { all[idx].result = fullResult; all[idx].status = 'completed'; all[idx].finished_at = new Date().toISOString() }
+      writeTasks(all)
+      send({ type: 'done', taskId })
+      break
+
+    } catch (err) {
+      const isOverloaded = err.message?.includes('overloaded') || err.status === 529
+      console.error(`Tentativa ${attempt} falhou: ${err.message}`)
+
+      if (isOverloaded && attempt < MAX_RETRIES) {
+        continue // vai para próxima tentativa
+      }
+
+      // Falha definitiva
+      const all = readTasks()
+      const idx = all.findIndex(t => t.id === taskId)
+      if (idx !== -1) all[idx].status = 'error'
+      writeTasks(all)
+
+      const userMsg = isOverloaded
+        ? '⚠️ A API da Anthropic está sobrecarregada no momento. Tente novamente em 1-2 minutos.'
+        : `⚠️ Erro: ${err.message}`
+      send({ type: 'error', message: userMsg })
+      break
     }
-
-    const all = readTasks()
-    const idx = all.findIndex(t => t.id === taskId)
-    if (idx !== -1) { all[idx].result = fullResult; all[idx].status = 'completed'; all[idx].finished_at = new Date().toISOString() }
-    writeTasks(all)
-    send({ type: 'done', taskId })
-
-  } catch (err) {
-    console.error(err.message)
-    const all = readTasks()
-    const idx = all.findIndex(t => t.id === taskId)
-    if (idx !== -1) all[idx].status = 'error'
-    writeTasks(all)
-    send({ type: 'error', message: err.message })
   }
 
   res.end()
