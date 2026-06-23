@@ -1,154 +1,160 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
   <title>Agency OS</title>
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { background: #0a0a0f; color: #e2e8f0; font-family: 'Inter', system-ui, sans-serif; height: 100vh; display: flex; overflow: hidden; }
-
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{background:#0a0a0f;color:#e2e8f0;font-family:'Inter',system-ui,sans-serif;height:100vh;display:flex;overflow:hidden}
     /* SIDEBAR */
-    .sidebar { width: 280px; min-width: 280px; background: #0f0f18; border-right: 1px solid #1e1e2e; display: flex; flex-direction: column; }
-    .sidebar-header { padding: 20px; border-bottom: 1px solid #1e1e2e; }
-    .logo { font-size: 18px; font-weight: 800; color: #fff; letter-spacing: -0.5px; }
-    .logo span { color: #8b5cf6; }
-    .logo-sub { font-size: 11px; color: #64748b; margin-top: 2px; }
-
-    .agents-label { padding: 16px 20px 8px; font-size: 10px; font-weight: 700; color: #475569; letter-spacing: 0.1em; text-transform: uppercase; }
-
-    .agent-list { flex: 1; overflow-y: auto; padding: 0 8px 8px; }
-    .agent-btn { width: 100%; display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; border: none; background: transparent; color: #94a3b8; cursor: pointer; text-align: left; transition: all 0.15s; margin-bottom: 2px; }
-    .agent-btn:hover { background: #1e1e2e; color: #e2e8f0; }
-    .agent-btn.active { background: #1e1e2e; color: #fff; }
-    .agent-btn.active .agent-dot { opacity: 1; }
-    .agent-emoji { font-size: 18px; min-width: 26px; text-align: center; }
-    .agent-info { flex: 1; min-width: 0; }
-    .agent-btn-name { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .agent-btn-desc { font-size: 10px; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px; }
-    .agent-dot { width: 6px; height: 6px; border-radius: 50%; background: #22c55e; opacity: 0; flex-shrink: 0; }
-
-    .sidebar-footer { padding: 12px; border-top: 1px solid #1e1e2e; }
-    .client-select-label { font-size: 10px; color: #64748b; margin-bottom: 6px; display: block; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
-    .client-select { width: 100%; background: #1e1e2e; border: 1px solid #2d2d40; color: #e2e8f0; padding: 8px 10px; border-radius: 8px; font-size: 13px; outline: none; cursor: pointer; }
-    .client-select:focus { border-color: #8b5cf6; }
-
+    .sidebar{width:260px;min-width:260px;background:#0f0f18;border-right:1px solid #1e1e2e;display:flex;flex-direction:column}
+    .sidebar-header{padding:18px 16px 12px;border-bottom:1px solid #1e1e2e}
+    .logo{font-size:17px;font-weight:800;color:#fff;letter-spacing:-.5px}
+    .logo span{color:#8b5cf6}
+    .logo-sub{font-size:10px;color:#475569;margin-top:2px}
+    .section-label{padding:14px 16px 6px;font-size:10px;font-weight:700;color:#475569;letter-spacing:.1em;text-transform:uppercase}
+    .agent-list{flex:1;overflow-y:auto;padding:0 8px}
+    .agent-btn{width:100%;display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:8px;border:none;background:transparent;color:#94a3b8;cursor:pointer;text-align:left;transition:all .15s;margin-bottom:2px}
+    .agent-btn:hover{background:#1e1e2e;color:#e2e8f0}
+    .agent-btn.active{background:#1e1e2e;color:#fff;border-left:2px solid #8b5cf6}
+    .agent-emoji{font-size:16px;min-width:24px;text-align:center}
+    .agent-info{flex:1;min-width:0}
+    .agent-btn-name{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .agent-btn-desc{font-size:10px;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+    /* Client selector */
+    .sidebar-bottom{padding:10px;border-top:1px solid #1e1e2e;display:flex;flex-direction:column;gap:6px}
+    .client-label{font-size:10px;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+    .client-row{display:flex;gap:6px}
+    .client-select{flex:1;background:#1e1e2e;border:1px solid #2d2d40;color:#e2e8f0;padding:7px 10px;border-radius:8px;font-size:12px;outline:none;cursor:pointer}
+    .client-select:focus{border-color:#8b5cf6}
+    .new-client-btn{background:#8b5cf620;border:1px solid #8b5cf640;color:#a78bfa;border-radius:8px;padding:7px 10px;cursor:pointer;font-size:12px;white-space:nowrap;transition:all .15s}
+    .new-client-btn:hover{background:#8b5cf630}
     /* MAIN */
-    .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
-
-    .topbar { padding: 16px 24px; border-bottom: 1px solid #1e1e2e; display: flex; align-items: center; justify-content: space-between; background: #0f0f18; }
-    .current-agent { display: flex; align-items: center; gap: 10px; }
-    .current-agent-emoji { font-size: 24px; }
-    .current-agent-name { font-size: 16px; font-weight: 700; }
-    .current-agent-desc { font-size: 12px; color: #64748b; }
-    .status-badge { padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; background: #1e2d1e; color: #22c55e; border: 1px solid #15803d40; }
-    .status-badge.running { background: #2d2010; color: #f59e0b; border-color: #92400e40; animation: pulse 1.5s infinite; }
-    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
-
+    .main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+    .topbar{padding:14px 20px;border-bottom:1px solid #1e1e2e;display:flex;align-items:center;justify-content:space-between;background:#0f0f18}
+    .current-agent{display:flex;align-items:center;gap:10px}
+    .current-emoji{font-size:22px}
+    .current-name{font-size:15px;font-weight:700}
+    .current-desc{font-size:11px;color:#64748b}
+    .status-badge{padding:4px 12px;border-radius:20px;font-size:11px;font-weight:600;background:#1e2d1e;color:#22c55e;border:1px solid #15803d40}
+    .status-badge.running{background:#2d2010;color:#f59e0b;border-color:#92400e40;animation:pulse 1.5s infinite}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
     /* CHAT */
-    .chat-area { flex: 1; overflow-y: auto; padding: 24px; display: flex; flex-direction: column; gap: 16px; }
-    .chat-area::-webkit-scrollbar { width: 4px; }
-    .chat-area::-webkit-scrollbar-thumb { background: #2d2d40; border-radius: 2px; }
-
-    .msg { max-width: 85%; }
-    .msg.user { align-self: flex-end; }
-    .msg.agent { align-self: flex-start; }
-
-    .msg-bubble { padding: 12px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; }
-    .msg.user .msg-bubble { background: #8b5cf6; color: #fff; border-bottom-right-radius: 4px; }
-    .msg.agent .msg-bubble { background: #1e1e2e; color: #e2e8f0; border-bottom-left-radius: 4px; border: 1px solid #2d2d40; }
-
-    .msg-meta { font-size: 10px; color: #475569; margin-top: 4px; padding: 0 4px; }
-    .msg.user .msg-meta { text-align: right; }
-
-    .msg-bubble pre { background: #0a0a0f; border: 1px solid #2d2d40; border-radius: 6px; padding: 12px; margin: 8px 0; overflow-x: auto; font-size: 12px; font-family: 'Fira Code', 'Consolas', monospace; }
-    .msg-bubble code { background: #0a0a0f; padding: 2px 6px; border-radius: 4px; font-size: 12px; font-family: 'Fira Code', 'Consolas', monospace; color: #a78bfa; }
-    .msg-bubble strong { color: #f1f5f9; }
-    .msg-bubble ul, .msg-bubble ol { padding-left: 20px; margin: 6px 0; }
-    .msg-bubble li { margin: 3px 0; }
-    .msg-bubble h1, .msg-bubble h2, .msg-bubble h3 { color: #f1f5f9; margin: 12px 0 6px; }
-    .msg-bubble h2 { font-size: 15px; border-bottom: 1px solid #2d2d40; padding-bottom: 4px; }
-    .msg-bubble h3 { font-size: 13px; color: #a78bfa; }
-    .msg-bubble p { margin: 6px 0; }
-    .msg-bubble table { width: 100%; border-collapse: collapse; margin: 8px 0; font-size: 12px; }
-    .msg-bubble th { background: #2d2d40; padding: 6px 10px; text-align: left; }
-    .msg-bubble td { padding: 6px 10px; border-bottom: 1px solid #1e1e2e; }
-    .msg-bubble blockquote { border-left: 3px solid #8b5cf6; padding-left: 12px; color: #94a3b8; margin: 8px 0; }
-
-    .typing { display: flex; align-items: center; gap: 6px; padding: 12px 16px; background: #1e1e2e; border-radius: 12px; border: 1px solid #2d2d40; width: fit-content; }
-    .typing-dot { width: 6px; height: 6px; border-radius: 50%; background: #8b5cf6; animation: typing-bounce 1.2s infinite; }
-    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
-    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
-    @keyframes typing-bounce { 0%, 60%, 100% { transform: translateY(0); } 30% { transform: translateY(-6px); } }
-
-    .empty-state { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; color: #475569; text-align: center; padding: 40px; }
-    .empty-emoji { font-size: 48px; }
-    .empty-title { font-size: 18px; font-weight: 600; color: #64748b; }
-    .empty-sub { font-size: 13px; max-width: 300px; }
-
-    .quick-tasks { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 8px; }
-    .quick-btn { padding: 8px 14px; background: #1e1e2e; border: 1px solid #2d2d40; border-radius: 20px; color: #94a3b8; font-size: 12px; cursor: pointer; transition: all 0.15s; }
-    .quick-btn:hover { background: #2d2d40; color: #e2e8f0; border-color: #8b5cf6; }
-
+    .chat-area{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:14px}
+    .chat-area::-webkit-scrollbar{width:4px}
+    .chat-area::-webkit-scrollbar-thumb{background:#2d2d40;border-radius:2px}
+    .msg{max-width:88%}
+    .msg.user{align-self:flex-end}
+    .msg.agent{align-self:flex-start}
+    .msg-bubble{padding:11px 15px;border-radius:12px;font-size:13.5px;line-height:1.65}
+    .msg.user .msg-bubble{background:#8b5cf6;color:#fff;border-bottom-right-radius:3px}
+    .msg.agent .msg-bubble{background:#1e1e2e;color:#e2e8f0;border-bottom-left-radius:3px;border:1px solid #2d2d40}
+    .msg-meta{font-size:10px;color:#475569;margin-top:3px;padding:0 3px}
+    .msg.user .msg-meta{text-align:right}
+    .msg-bubble pre{background:#0a0a0f;border:1px solid #2d2d40;border-radius:6px;padding:10px;margin:8px 0;overflow-x:auto;font-size:12px;font-family:monospace}
+    .msg-bubble code{background:#0a0a0f;padding:2px 5px;border-radius:4px;font-size:12px;font-family:monospace;color:#a78bfa}
+    .msg-bubble strong{color:#f1f5f9}
+    .msg-bubble ul,.msg-bubble ol{padding-left:18px;margin:5px 0}
+    .msg-bubble li{margin:3px 0}
+    .msg-bubble h2{font-size:14px;border-bottom:1px solid #2d2d40;padding-bottom:4px;margin:10px 0 5px;color:#f1f5f9}
+    .msg-bubble h3{font-size:13px;color:#a78bfa;margin:8px 0 4px}
+    .msg-bubble p{margin:5px 0}
+    .msg-bubble table{width:100%;border-collapse:collapse;margin:8px 0;font-size:12px}
+    .msg-bubble th{background:#2d2d40;padding:5px 9px;text-align:left}
+    .msg-bubble td{padding:5px 9px;border-bottom:1px solid #1e1e2e}
+    .msg-bubble blockquote{border-left:3px solid #8b5cf6;padding-left:10px;color:#94a3b8;margin:6px 0}
+    .msg-image{max-width:260px;border-radius:8px;margin-bottom:6px;display:block;border:1px solid #2d2d40}
+    .typing{display:flex;align-items:center;gap:5px;padding:11px 15px;background:#1e1e2e;border-radius:12px;border:1px solid #2d2d40;width:fit-content}
+    .typing-dot{width:6px;height:6px;border-radius:50%;background:#8b5cf6;animation:tb 1.2s infinite}
+    .typing-dot:nth-child(2){animation-delay:.2s}
+    .typing-dot:nth-child(3){animation-delay:.4s}
+    @keyframes tb{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px)}}
+    .empty-state{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:#475569;text-align:center;padding:40px}
+    .empty-emoji{font-size:44px}
+    .empty-title{font-size:17px;font-weight:600;color:#64748b}
+    .empty-sub{font-size:12px;max-width:280px}
+    .quick-tasks{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;margin-top:8px}
+    .quick-btn{padding:7px 13px;background:#1e1e2e;border:1px solid #2d2d40;border-radius:20px;color:#94a3b8;font-size:12px;cursor:pointer;transition:all .15s}
+    .quick-btn:hover{background:#2d2d40;color:#e2e8f0;border-color:#8b5cf6}
     /* INPUT */
-    .input-area { padding: 16px 24px; border-top: 1px solid #1e1e2e; background: #0f0f18; }
-    .input-wrap { display: flex; gap: 10px; background: #1e1e2e; border: 1px solid #2d2d40; border-radius: 12px; padding: 12px 16px; transition: border-color 0.15s; }
-    .input-wrap:focus-within { border-color: #8b5cf6; }
-    .task-input { flex: 1; background: transparent; border: none; outline: none; color: #e2e8f0; font-size: 14px; resize: none; min-height: 22px; max-height: 120px; line-height: 1.5; font-family: inherit; }
-    .task-input::placeholder { color: #475569; }
-    .send-btn { background: #8b5cf6; border: none; border-radius: 8px; padding: 6px 14px; color: #fff; cursor: pointer; font-size: 13px; font-weight: 600; transition: all 0.15s; align-self: flex-end; white-space: nowrap; }
-    .send-btn:hover { background: #7c3aed; }
-    .send-btn:disabled { background: #374151; color: #64748b; cursor: not-allowed; }
-    .input-hint { font-size: 11px; color: #475569; margin-top: 8px; }
-
-    /* HISTORY PANEL */
-    .history-panel { width: 260px; min-width: 260px; background: #0f0f18; border-left: 1px solid #1e1e2e; display: flex; flex-direction: column; }
-    .history-header { padding: 16px 16px 8px; font-size: 11px; font-weight: 700; color: #475569; letter-spacing: 0.08em; text-transform: uppercase; border-bottom: 1px solid #1e1e2e; }
-    .history-list { flex: 1; overflow-y: auto; padding: 8px; }
-    .history-item { padding: 10px 12px; border-radius: 8px; margin-bottom: 4px; cursor: pointer; border: 1px solid transparent; transition: all 0.15s; }
-    .history-item:hover { background: #1e1e2e; border-color: #2d2d40; }
-    .history-item.active { background: #1e1e2e; border-color: #8b5cf640; }
-    .h-agent { font-size: 11px; font-weight: 600; color: #8b5cf6; margin-bottom: 3px; }
-    .h-msg { font-size: 12px; color: #94a3b8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .h-time { font-size: 10px; color: #475569; margin-top: 3px; }
-    .h-status { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 4px; }
-    .h-status.completed { background: #22c55e; }
-    .h-status.running { background: #f59e0b; }
-    .h-status.error { background: #ef4444; }
-    .history-empty { padding: 20px; text-align: center; color: #475569; font-size: 12px; }
+    .input-area{padding:14px 20px;border-top:1px solid #1e1e2e;background:#0f0f18}
+    /* Image preview */
+    .image-preview-wrap{display:none;margin-bottom:8px;position:relative;width:fit-content}
+    .image-preview-wrap.show{display:block}
+    .image-preview{height:70px;border-radius:8px;border:1px solid #2d2d40;object-fit:cover}
+    .image-remove{position:absolute;top:-6px;right:-6px;width:18px;height:18px;border-radius:50%;background:#ef4444;border:none;color:#fff;cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center;line-height:1}
+    .input-wrap{display:flex;gap:8px;background:#1e1e2e;border:1px solid #2d2d40;border-radius:12px;padding:10px 14px;transition:border-color .15s}
+    .input-wrap:focus-within{border-color:#8b5cf6}
+    .upload-btn{background:transparent;border:none;color:#64748b;cursor:pointer;font-size:16px;padding:2px 4px;transition:color .15s;align-self:flex-end;margin-bottom:2px}
+    .upload-btn:hover{color:#a78bfa}
+    .task-input{flex:1;background:transparent;border:none;outline:none;color:#e2e8f0;font-size:13.5px;resize:none;min-height:22px;max-height:120px;line-height:1.5;font-family:inherit}
+    .task-input::placeholder{color:#475569}
+    .send-btn{background:#8b5cf6;border:none;border-radius:8px;padding:6px 14px;color:#fff;cursor:pointer;font-size:13px;font-weight:600;transition:all .15s;align-self:flex-end;white-space:nowrap}
+    .send-btn:hover{background:#7c3aed}
+    .send-btn:disabled{background:#374151;color:#64748b;cursor:not-allowed}
+    .input-hint{font-size:10px;color:#475569;margin-top:6px}
+    /* HISTORY */
+    .history-panel{width:240px;min-width:240px;background:#0f0f18;border-left:1px solid #1e1e2e;display:flex;flex-direction:column}
+    .history-header{padding:14px 14px 8px;font-size:10px;font-weight:700;color:#475569;letter-spacing:.08em;text-transform:uppercase;border-bottom:1px solid #1e1e2e}
+    .history-list{flex:1;overflow-y:auto;padding:6px}
+    .history-item{padding:9px 10px;border-radius:7px;margin-bottom:3px;border:1px solid transparent;transition:all .15s;cursor:pointer}
+    .history-item:hover{background:#1e1e2e;border-color:#2d2d40}
+    .h-agent{font-size:10px;font-weight:600;color:#8b5cf6;margin-bottom:2px}
+    .h-msg{font-size:11px;color:#94a3b8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .h-time{font-size:9px;color:#475569;margin-top:2px}
+    .h-dot{display:inline-block;width:5px;height:5px;border-radius:50%;margin-right:4px}
+    .h-dot.completed{background:#22c55e}
+    .h-dot.running{background:#f59e0b}
+    .h-dot.error{background:#ef4444}
+    .history-empty{padding:16px;text-align:center;color:#475569;font-size:11px}
+    /* MODAL */
+    .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;align-items:center;justify-content:center}
+    .modal-overlay.show{display:flex}
+    .modal{background:#13131f;border:1px solid #2d2d40;border-radius:14px;padding:24px;width:420px;max-width:90vw}
+    .modal-title{font-size:16px;font-weight:700;margin-bottom:16px;color:#fff}
+    .modal-close{float:right;background:none;border:none;color:#64748b;cursor:pointer;font-size:18px;margin-top:-4px}
+    .form-row{margin-bottom:12px}
+    .form-label{font-size:11px;color:#94a3b8;font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;display:block}
+    .form-input,.form-select{width:100%;background:#1e1e2e;border:1px solid #2d2d40;color:#e2e8f0;padding:9px 12px;border-radius:8px;font-size:13px;outline:none;font-family:inherit}
+    .form-input:focus,.form-select:focus{border-color:#8b5cf6}
+    .form-row-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:18px}
+    .btn-cancel{padding:8px 16px;background:transparent;border:1px solid #2d2d40;color:#94a3b8;border-radius:8px;cursor:pointer;font-size:13px}
+    .btn-save{padding:8px 16px;background:#8b5cf6;border:none;color:#fff;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600}
+    .btn-save:hover{background:#7c3aed}
+    input[type=file]{display:none}
   </style>
 </head>
 <body>
 
-<!-- SIDEBAR: AGENTS -->
+<!-- SIDEBAR -->
 <div class="sidebar">
   <div class="sidebar-header">
     <div class="logo">Agency <span>OS</span></div>
     <div class="logo-sub">Painel de Controle dos Agentes</div>
   </div>
-  <div class="agents-label">Agentes</div>
+  <div class="section-label">Agentes</div>
   <div class="agent-list" id="agentList"></div>
-  <div class="sidebar-footer">
-    <label class="client-select-label">Cliente ativo</label>
-    <select class="client-select" id="clientSelect">
-      <option value="">— Nenhum (geral) —</option>
-      <option>Galego Barbearia</option>
-      <option>Coliseu Closefit</option>
-      <option>Odonto Talita</option>
-      <option>TechFlow Solutions</option>
-      <option>Padaria Dona Rosa</option>
-    </select>
+  <div class="sidebar-bottom">
+    <div class="client-label">Cliente ativo</div>
+    <div class="client-row">
+      <select class="client-select" id="clientSelect">
+        <option value="">— Nenhum (geral) —</option>
+      </select>
+      <button class="new-client-btn" onclick="openNewClientModal()">+ Novo</button>
+    </div>
   </div>
 </div>
 
 <!-- MAIN CHAT -->
 <div class="main">
   <div class="topbar">
-    <div class="current-agent" id="currentAgentInfo">
-      <div class="current-agent-emoji" id="currentEmoji">🤖</div>
+    <div class="current-agent">
+      <div class="current-emoji" id="currentEmoji">🤖</div>
       <div>
-        <div class="current-agent-name" id="currentName">Selecione um agente</div>
-        <div class="current-agent-desc" id="currentDesc">Escolha um especialista na barra lateral</div>
+        <div class="current-name" id="currentName">Selecione um agente</div>
+        <div class="current-desc" id="currentDesc">Escolha um especialista na barra lateral</div>
       </div>
     </div>
     <div class="status-badge" id="statusBadge">Pronto</div>
@@ -158,28 +164,34 @@
     <div class="empty-state" id="emptyState">
       <div class="empty-emoji">🏢</div>
       <div class="empty-title">Bem-vindo ao Agency OS</div>
-      <div class="empty-sub">Selecione um agente na barra lateral e mande sua primeira tarefa</div>
-      <div class="quick-tasks" id="quickTasks">
-        <div class="quick-btn" onclick="quickTask('Qualifica um novo cliente: academia de ginástica em São Paulo')">🤝 Novo lead</div>
-        <div class="quick-btn" onclick="quickTask('Cria o calendário de conteúdo de julho para uma barbearia')">📅 Calendário</div>
-        <div class="quick-btn" onclick="quickTask('Escreve uma legenda para carrossel sobre os 3 erros mais comuns no Instagram')">✍️ Legenda</div>
-        <div class="quick-btn" onclick="quickTask('Monta uma campanha Meta Ads para uma clínica odontológica, verba R$800/mês')">🎯 Campanha Ads</div>
-        <div class="quick-btn" onclick="quickTask('Cria um site para uma padaria chamada Dona Rosa com foco em delivery')">🌐 Site automático</div>
-        <div class="quick-btn" onclick="quickTask('Analisa as métricas do mês e diz o que está bem e o que precisa melhorar')">📊 Métricas</div>
+      <div class="empty-sub">Selecione um agente e mande sua tarefa — pode enviar texto e imagens</div>
+      <div class="quick-tasks">
+        <div class="quick-btn" onclick="quickTask('sales-agent','Qualifica um novo lead: academia de ginástica em São Paulo, 200 alunos, quer mais visibilidade no Instagram')">🤝 Novo lead</div>
+        <div class="quick-btn" onclick="quickTask('social-media-strategist','Cria calendário de conteúdo de julho para uma barbearia masculina premium')">📅 Calendário</div>
+        <div class="quick-btn" onclick="quickTask('content-writer','Escreve legenda para carrossel: 3 erros que fazem seu Instagram não crescer')">✍️ Legenda</div>
+        <div class="quick-btn" onclick="quickTask('traffic-manager','Monta campanha Meta Ads para clínica odontológica, verba R$800/mês')">🎯 Campanha Ads</div>
+        <div class="quick-btn" onclick="quickTask('site-builder-auto','Cria site completo para uma padaria artesanal chamada Dona Rosa, foco em delivery')">🌐 Site automático</div>
+        <div class="quick-btn" onclick="quickTask('metrics-analyst','Quais métricas devo acompanhar semanalmente para saber se minha agência está crescendo?')">📊 Métricas</div>
       </div>
     </div>
   </div>
 
   <div class="input-area">
+    <div class="image-preview-wrap" id="imagePreviewWrap">
+      <img id="imagePreview" class="image-preview" src="" alt="preview"/>
+      <button class="image-remove" onclick="removeImage()" title="Remover imagem">✕</button>
+    </div>
     <div class="input-wrap">
-      <textarea class="task-input" id="taskInput" placeholder="Mande uma tarefa para o agente selecionado..." rows="1"></textarea>
+      <button class="upload-btn" onclick="document.getElementById('fileInput').click()" title="Enviar imagem">📎</button>
+      <input type="file" id="fileInput" accept="image/*" onchange="handleImageUpload(event)"/>
+      <textarea class="task-input" id="taskInput" placeholder="Mande uma tarefa ou envie uma imagem para o agente analisar..." rows="1"></textarea>
       <button class="send-btn" id="sendBtn" onclick="sendTask()">Enviar →</button>
     </div>
-    <div class="input-hint">Enter para enviar · Shift+Enter para nova linha · Selecione o cliente ativo na barra lateral</div>
+    <div class="input-hint">Enter = enviar · Shift+Enter = nova linha · 📎 = enviar imagem para análise</div>
   </div>
 </div>
 
-<!-- HISTORY PANEL -->
+<!-- HISTORY -->
 <div class="history-panel">
   <div class="history-header">Histórico de Tarefas</div>
   <div class="history-list" id="historyList">
@@ -187,215 +199,361 @@
   </div>
 </div>
 
+<!-- MODAL: Novo Cliente -->
+<div class="modal-overlay" id="newClientModal">
+  <div class="modal">
+    <div class="modal-title">
+      <button class="modal-close" onclick="closeNewClientModal()">✕</button>
+      Novo Cliente
+    </div>
+    <div class="form-row">
+      <label class="form-label">Nome da empresa *</label>
+      <input class="form-input" id="nc-name" placeholder="Ex: Padaria Dona Rosa" />
+    </div>
+    <div class="form-row-2">
+      <div class="form-row" style="margin-bottom:0">
+        <label class="form-label">Segmento</label>
+        <input class="form-input" id="nc-segment" placeholder="Ex: Alimentação" />
+      </div>
+      <div class="form-row" style="margin-bottom:0">
+        <label class="form-label">Contato</label>
+        <input class="form-input" id="nc-contact" placeholder="Nome do responsável" />
+      </div>
+    </div>
+    <div class="form-row" style="margin-top:12px">
+      <label class="form-label">Pacote</label>
+      <select class="form-select" id="nc-package">
+        <option value="lead">Lead (ainda sem pacote)</option>
+        <option value="starter">Starter — R$997/mês</option>
+        <option value="growth">Growth — R$1.997/mês</option>
+        <option value="premium">Premium — R$3.497/mês</option>
+        <option value="site">Site Automático — R$1.500</option>
+      </select>
+    </div>
+    <div class="form-row-2">
+      <div class="form-row" style="margin-bottom:0">
+        <label class="form-label">Valor mensal (R$)</label>
+        <input class="form-input" id="nc-value" type="number" placeholder="997" />
+      </div>
+      <div class="form-row" style="margin-bottom:0">
+        <label class="form-label">Etapa</label>
+        <select class="form-select" id="nc-stage">
+          <option value="lead">Lead</option>
+          <option value="qualificado">Qualificado</option>
+          <option value="proposta">Proposta</option>
+          <option value="negociacao">Negociação</option>
+          <option value="ativo">Ativo</option>
+          <option value="recorrente">Recorrente</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row" style="margin-top:12px">
+      <label class="form-label">Observações</label>
+      <input class="form-input" id="nc-notes" placeholder="Contexto inicial sobre o cliente..." />
+    </div>
+    <div id="nc-error" style="color:#f87171;font-size:12px;margin-top:8px;display:none"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeNewClientModal()">Cancelar</button>
+      <button class="btn-save" onclick="saveNewClient()">Criar Cliente</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const API = 'http://localhost:3002'
 let selectedAgent = null
+let selectedAgentData = null
 let isRunning = false
-let streamingMsg = null
+let streamingMsgEl = null
+let rawStream = ''
+let pendingImage = null // { data: base64, mediaType, previewUrl }
 
-// Load agents
+// ── Agents ────────────────────────────────────────────────────────────────────
 async function loadAgents() {
   const res = await fetch(`${API}/api/agents`)
   const agents = await res.json()
-  const list = document.getElementById('agentList')
-  list.innerHTML = agents.map(a => `
-    <button class="agent-btn" onclick="selectAgent('${a.id}', '${a.emoji}', '${a.name}', \`${a.description}\`)" id="btn-${a.id}">
+  document.getElementById('agentList').innerHTML = agents.map(a => `
+    <button class="agent-btn" onclick="selectAgent('${a.id}','${a.emoji}','${escHtml(a.name)}','${escHtml(a.description)}')" id="btn-${a.id}">
       <span class="agent-emoji">${a.emoji}</span>
       <div class="agent-info">
         <div class="agent-btn-name">${a.name}</div>
         <div class="agent-btn-desc">${a.description}</div>
       </div>
-      <div class="agent-dot"></div>
     </button>
   `).join('')
 }
 
 function selectAgent(id, emoji, name, desc) {
   selectedAgent = id
+  selectedAgentData = { id, emoji, name, desc }
   document.querySelectorAll('.agent-btn').forEach(b => b.classList.remove('active'))
-  document.getElementById(`btn-${id}`).classList.add('active')
+  const btn = document.getElementById(`btn-${id}`)
+  if (btn) btn.classList.add('active')
   document.getElementById('currentEmoji').textContent = emoji
   document.getElementById('currentName').textContent = name
   document.getElementById('currentDesc').textContent = desc
+  document.getElementById('emptyState') && (document.getElementById('emptyState').style.display = 'none')
   document.getElementById('taskInput').focus()
-  // Hide empty state if shown
-  const empty = document.getElementById('emptyState')
-  if (empty) empty.style.display = 'none'
 }
 
-function quickTask(text) {
-  if (!selectedAgent) {
-    // Auto-select sales agent for quick tasks
-    selectAgent('sales-agent', '🤝', 'Agente de Vendas', 'Qualificação, propostas e fechamento')
+// ── Clients ───────────────────────────────────────────────────────────────────
+async function loadClients() {
+  try {
+    const r = await fetch(`${API}/api/clients`)
+    const clients = await r.json()
+    const sel = document.getElementById('clientSelect')
+    const current = sel.value
+    sel.innerHTML = '<option value="">— Nenhum (geral) —</option>' +
+      clients.map(c => `<option value="${c.name}"${c.name === current ? ' selected' : ''}>${c.name} · ${c.stage}</option>`).join('')
+  } catch { /* dashboard offline */ }
+}
+
+// ── New Client Modal ──────────────────────────────────────────────────────────
+function openNewClientModal() {
+  document.getElementById('newClientModal').classList.add('show')
+  document.getElementById('nc-name').focus()
+}
+function closeNewClientModal() {
+  document.getElementById('newClientModal').classList.remove('show')
+  document.getElementById('nc-error').style.display = 'none'
+}
+async function saveNewClient() {
+  const name = document.getElementById('nc-name').value.trim()
+  if (!name) { showNcError('Nome da empresa é obrigatório'); return }
+  const pkg = document.getElementById('nc-package').value
+  const pkgValues = { starter: 997, growth: 1997, premium: 3497, site: 1500, lead: 0 }
+  const body = {
+    name, segment: document.getElementById('nc-segment').value,
+    contact: document.getElementById('nc-contact').value,
+    package: pkg,
+    monthly_value: Number(document.getElementById('nc-value').value) || pkgValues[pkg] || 0,
+    stage: document.getElementById('nc-stage').value,
+    notes: document.getElementById('nc-notes').value
   }
-  document.getElementById('taskInput').value = text
-  sendTask()
+  try {
+    const r = await fetch(`${API}/api/clients`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+    const json = await r.json()
+    if (json.success === false) { showNcError(json.error || 'Erro ao criar'); return }
+    closeNewClientModal()
+    await loadClients()
+    document.getElementById('clientSelect').value = name
+    appendSystemMsg(`✅ Cliente **${name}** criado com sucesso e adicionado ao Dashboard!`)
+  } catch (e) { showNcError('Erro de conexão: ' + e.message) }
+}
+function showNcError(msg) {
+  const el = document.getElementById('nc-error')
+  el.textContent = msg; el.style.display = 'block'
 }
 
+// ── Image upload ──────────────────────────────────────────────────────────────
+function handleImageUpload(e) {
+  const file = e.target.files[0]
+  if (!file) return
+  if (file.size > 5 * 1024 * 1024) { alert('Imagem muito grande (máx 5MB)'); return }
+  const reader = new FileReader()
+  reader.onload = ev => {
+    const dataUrl = ev.target.result
+    const [header, data] = dataUrl.split(',')
+    const mediaType = header.match(/:(.*?);/)[1]
+    pendingImage = { data, mediaType, previewUrl: dataUrl }
+    document.getElementById('imagePreview').src = dataUrl
+    document.getElementById('imagePreviewWrap').classList.add('show')
+  }
+  reader.readAsDataURL(file)
+  e.target.value = ''
+}
+function removeImage() {
+  pendingImage = null
+  document.getElementById('imagePreviewWrap').classList.remove('show')
+  document.getElementById('imagePreview').src = ''
+}
+
+// ── Quick tasks ───────────────────────────────────────────────────────────────
+function quickTask(agentId, text) {
+  selectAgent(...getAgentArgs(agentId))
+  document.getElementById('taskInput').value = text
+  setTimeout(sendTask, 50)
+}
+function getAgentArgs(id) {
+  const map = {
+    'sales-agent':['sales-agent','🤝','Agente de Vendas','Qualificação, propostas e fechamento'],
+    'social-media-strategist':['social-media-strategist','📱','Estrategista de Redes','Calendário editorial e estratégia'],
+    'content-writer':['content-writer','✍️','Redator de Conteúdo','Legendas, roteiros e hooks'],
+    'traffic-manager':['traffic-manager','🎯','Gestor de Tráfego','Meta Ads e Google Ads'],
+    'site-builder-auto':['site-builder-auto','🌐','Criador de Sites','Site a partir do Instagram'],
+    'metrics-analyst':['metrics-analyst','📊','Analista de Métricas','Performance e alertas']
+  }
+  return map[id] || [id,'🤖',id,'Agente especialista']
+}
+
+// ── Send task ─────────────────────────────────────────────────────────────────
 async function sendTask() {
-  if (isRunning || !selectedAgent) return
+  if (isRunning) return
+  if (!selectedAgent) { alert('Selecione um agente primeiro!'); return }
   const input = document.getElementById('taskInput')
   const msg = input.value.trim()
-  if (!msg) return
+  if (!msg && !pendingImage) return
 
   isRunning = true
   input.value = ''
+  input.style.height = 'auto'
   document.getElementById('sendBtn').disabled = true
   document.getElementById('statusBadge').textContent = 'Processando...'
   document.getElementById('statusBadge').className = 'status-badge running'
-  document.getElementById('emptyState') && (document.getElementById('emptyState').style.display = 'none')
+  const es = document.getElementById('emptyState')
+  if (es) es.style.display = 'none'
 
-  const client = document.getElementById('clientSelect').value
+  const clientName = document.getElementById('clientSelect').value
+  const imgToSend = pendingImage ? { data: pendingImage.data, mediaType: pendingImage.mediaType } : null
+  const previewUrl = pendingImage?.previewUrl
 
-  // User message
-  appendMsg('user', msg, 'Você')
+  // User bubble
+  appendMsg('user', msg, 'Você', '', previewUrl)
+  removeImage()
 
-  // Agent thinking indicator
-  const thinkingId = 'thinking-' + Date.now()
-  appendThinking(thinkingId)
+  // Thinking
+  const thinkId = 'think-' + Date.now()
+  appendThinking(thinkId)
 
-  const eventSource = new EventSource(`${API}/api/run?_=${Date.now()}`)
+  try {
+    const response = await fetch(`${API}/api/run`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ agentId: selectedAgent, message: msg || 'Analise essa imagem.', clientName, image: imgToSend })
+    })
+    document.getElementById(thinkId)?.remove()
+    streamingMsgEl = appendMsg('agent', '', selectedAgentData?.name || 'Agente', selectedAgentData?.emoji || '🤖')
+    rawStream = ''
 
-  // Use fetch with SSE manually
-  const response = await fetch(`${API}/api/run`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ agentId: selectedAgent, message: msg, client })
-  })
-
-  // Remove thinking
-  document.getElementById(thinkingId)?.remove()
-
-  // Create agent message container
-  const agentEmoji = document.getElementById('currentEmoji').textContent
-  const agentName = document.getElementById('currentName').textContent
-  streamingMsg = appendMsg('agent', '', agentName, agentEmoji)
-
-  const reader = response.body.getReader()
-  const decoder = new TextDecoder()
-  let buffer = ''
-
-  while (true) {
-    const { done, value } = await reader.read()
-    if (done) break
-    buffer += decoder.decode(value, { stream: true })
-    const lines = buffer.split('\n')
-    buffer = lines.pop()
-    for (const line of lines) {
-      if (!line.startsWith('data: ')) continue
-      try {
-        const data = JSON.parse(line.slice(6))
-        if (data.type === 'delta') {
-          appendToStreaming(data.text)
-        } else if (data.type === 'done') {
-          renderMarkdown()
-          loadHistory()
-        } else if (data.type === 'error') {
-          appendToStreaming('\n\n⚠️ Erro: ' + data.message)
-        }
-      } catch (e) {}
+    const reader = response.body.getReader()
+    const decoder = new TextDecoder()
+    let buf = ''
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+      buf += decoder.decode(value, { stream: true })
+      const lines = buf.split('\n')
+      buf = lines.pop()
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue
+        try {
+          const d = JSON.parse(line.slice(6))
+          if (d.type === 'delta') { rawStream += d.text; updateStreaming() }
+          else if (d.type === 'done') { finalizeStreaming(); loadHistory(); loadClients() }
+          else if (d.type === 'error') { rawStream += '\n\n⚠️ Erro: ' + d.message; finalizeStreaming() }
+        } catch {}
+      }
     }
+  } catch (err) {
+    document.getElementById(thinkId)?.remove()
+    appendSystemMsg('❌ Erro de conexão: ' + err.message)
   }
 
   isRunning = false
-  streamingMsg = null
+  streamingMsgEl = null
   document.getElementById('sendBtn').disabled = false
   document.getElementById('statusBadge').textContent = 'Pronto'
   document.getElementById('statusBadge').className = 'status-badge'
 }
 
-function appendMsg(role, text, name, emoji = '') {
+function updateStreaming() {
+  if (!streamingMsgEl) return
+  streamingMsgEl.querySelector('.msg-bubble').textContent = rawStream
+  document.getElementById('chatArea').scrollTop = 9999
+}
+function finalizeStreaming() {
+  if (!streamingMsgEl) return
+  streamingMsgEl.querySelector('.msg-bubble').innerHTML = parseMarkdown(rawStream)
+  rawStream = ''
+  document.getElementById('chatArea').scrollTop = 9999
+}
+
+// ── Chat helpers ──────────────────────────────────────────────────────────────
+function appendMsg(role, text, name, emoji = '', imageUrl = '') {
   const chat = document.getElementById('chatArea')
   const div = document.createElement('div')
   div.className = `msg ${role}`
   const now = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+  const imgHtml = imageUrl ? `<img src="${imageUrl}" class="msg-image" alt="imagem">` : ''
   div.innerHTML = `
-    <div class="msg-bubble" data-raw="${escapeHtml(text)}">${role === 'agent' ? '' : escapeHtml(text)}</div>
+    <div class="msg-bubble">${imgHtml}${role === 'user' ? escHtml(text) : ''}</div>
     <div class="msg-meta">${emoji ? emoji + ' ' : ''}${name} · ${now}</div>
   `
-  if (role === 'user') div.querySelector('.msg-bubble').textContent = text
   chat.appendChild(div)
-  chat.scrollTop = chat.scrollHeight
+  chat.scrollTop = 9999
   return div
 }
-
 function appendThinking(id) {
   const chat = document.getElementById('chatArea')
   const div = document.createElement('div')
-  div.className = 'msg agent'
-  div.id = id
+  div.className = 'msg agent'; div.id = id
   div.innerHTML = `<div class="typing"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>`
-  chat.appendChild(div)
-  chat.scrollTop = chat.scrollHeight
+  chat.appendChild(div); chat.scrollTop = 9999
+}
+function appendSystemMsg(text) {
+  const chat = document.getElementById('chatArea')
+  const div = document.createElement('div')
+  div.style.cssText = 'align-self:center;font-size:11px;color:#64748b;padding:6px 12px;background:#1e1e2e;border-radius:20px;border:1px solid #2d2d40'
+  div.textContent = text.replace(/\*\*/g,'')
+  chat.appendChild(div); chat.scrollTop = 9999
 }
 
-let rawText = ''
-function appendToStreaming(text) {
-  if (!streamingMsg) return
-  rawText += text
-  const bubble = streamingMsg.querySelector('.msg-bubble')
-  bubble.textContent = rawText
-  document.getElementById('chatArea').scrollTop = document.getElementById('chatArea').scrollHeight
+// ── Markdown parser ───────────────────────────────────────────────────────────
+function parseMarkdown(t) {
+  return t
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/```[\w]*\n([\s\S]*?)```/g,'<pre><code>$1</code></pre>')
+    .replace(/`([^`]+)`/g,'<code>$1</code>')
+    .replace(/^### (.+)$/gm,'<h3>$1</h3>')
+    .replace(/^## (.+)$/gm,'<h2>$1</h2>')
+    .replace(/^# (.+)$/gm,'<h2>$1</h2>')
+    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g,'<em>$1</em>')
+    .replace(/^[-•] (.+)$/gm,'<li>$1</li>')
+    .replace(/^(\d+)\. (.+)$/gm,'<li>$2</li>')
+    .replace(/(<li>[\s\S]+?<\/li>)/g,'<ul>$1</ul>')
+    .replace(/^> (.+)$/gm,'<blockquote>$1</blockquote>')
+    .replace(/\n\n/g,'</p><p>')
+    .replace(/^(?![<\n])(.+)$/gm,'<p>$1</p>')
 }
+function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
 
-function renderMarkdown() {
-  if (!streamingMsg) return
-  const bubble = streamingMsg.querySelector('.msg-bubble')
-  bubble.innerHTML = parseMarkdown(rawText)
-  rawText = ''
-}
-
-function parseMarkdown(text) {
-  return text
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-    .replace(/```(\w*)\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>')
-    .replace(/`([^`]+)`/g, '<code>$1</code>')
-    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
-    .replace(/^## (.+)$/gm, '<h2>$1</h2>')
-    .replace(/^# (.+)$/gm, '<h1>$1</h1>')
-    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\*(.+?)\*/g, '<em>$1</em>')
-    .replace(/^- (.+)$/gm, '<li>$1</li>')
-    .replace(/(<li>[\s\S]*?<\/li>)/g, '<ul>$1</ul>')
-    .replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>')
-    .replace(/\n\n/g, '</p><p>')
-    .replace(/^(?!<[hupb])(.+)$/gm, '<p>$1</p>')
-}
-
-function escapeHtml(str) {
-  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')
-}
-
+// ── History ───────────────────────────────────────────────────────────────────
 async function loadHistory() {
-  const res = await fetch(`${API}/api/tasks`)
-  const tasks = await res.json()
-  const list = document.getElementById('historyList')
-  if (!tasks.length) { list.innerHTML = '<div class="history-empty">Nenhuma tarefa ainda</div>'; return }
-  list.innerHTML = tasks.slice(0, 30).map(t => {
-    const time = new Date(t.created_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
-    return `
-      <div class="history-item">
-        <div class="h-agent"><span class="h-status ${t.status}"></span>${t.agent_name}</div>
+  try {
+    const r = await fetch(`${API}/api/tasks`)
+    const tasks = await r.json()
+    const list = document.getElementById('historyList')
+    if (!tasks.length) { list.innerHTML = '<div class="history-empty">Nenhuma tarefa ainda</div>'; return }
+    list.innerHTML = tasks.slice(0,40).map(t => {
+      const time = new Date(t.created_at).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})
+      return `<div class="history-item">
+        <div class="h-agent"><span class="h-dot ${t.status}"></span>${t.agent_name}</div>
         <div class="h-msg">${t.user_message}</div>
         <div class="h-time">${time}</div>
-      </div>
-    `
-  }).join('')
+      </div>`
+    }).join('')
+  } catch {}
 }
 
-// Auto-resize textarea
-document.getElementById('taskInput').addEventListener('input', function() {
-  this.style.height = 'auto'
-  this.style.height = Math.min(this.scrollHeight, 120) + 'px'
+// ── Input behaviors ───────────────────────────────────────────────────────────
+document.getElementById('taskInput').addEventListener('input', function(){
+  this.style.height='auto'; this.style.height=Math.min(this.scrollHeight,120)+'px'
+})
+document.getElementById('taskInput').addEventListener('keydown', e => {
+  if (e.key==='Enter' && !e.shiftKey){ e.preventDefault(); sendTask() }
+})
+document.getElementById('newClientModal').addEventListener('keydown', e => {
+  if (e.key==='Enter') saveNewClient()
+  if (e.key==='Escape') closeNewClientModal()
 })
 
-document.getElementById('taskInput').addEventListener('keydown', function(e) {
-  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendTask() }
-})
-
+// ── Init ──────────────────────────────────────────────────────────────────────
 loadAgents()
+loadClients()
 loadHistory()
-setInterval(loadHistory, 15000)
+setInterval(loadHistory, 20000)
+setInterval(loadClients, 30000)
 </script>
 </body>
 </html>
