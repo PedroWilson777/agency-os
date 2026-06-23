@@ -22,23 +22,20 @@ if (!fs.existsSync(TASKS_FILE)) fs.writeFileSync(TASKS_FILE, '[]')
 function readTasks() { try { return JSON.parse(fs.readFileSync(TASKS_FILE, 'utf8')) } catch { return [] } }
 function writeTasks(t) { fs.writeFileSync(TASKS_FILE, JSON.stringify(t, null, 2)) }
 
-// Proxy helper → Agency Dashboard (port 3001)
-function dashboardRequest(method, urlPath, body) {
-  return new Promise((resolve, reject) => {
-    const data = body ? JSON.stringify(body) : null
-    const opts = {
-      hostname: 'localhost', port: 3001, path: urlPath, method,
-      headers: { 'Content-Type': 'application/json', ...(data ? { 'Content-Length': Buffer.byteLength(data) } : {}) }
-    }
-    const req = http.request(opts, res => {
-      let raw = ''
-      res.on('data', c => raw += c)
-      res.on('end', () => { try { resolve(JSON.parse(raw)) } catch { resolve({ success: false }) } })
+// Proxy helper → Agency Dashboard (local ou Railway)
+const DASHBOARD_URL = process.env.DASHBOARD_URL || 'http://localhost:3001'
+
+async function dashboardRequest(method, urlPath, body) {
+  try {
+    const res = await fetch(`${DASHBOARD_URL}${urlPath}`, {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: body ? JSON.stringify(body) : undefined
     })
-    req.on('error', reject)
-    if (data) req.write(data)
-    req.end()
-  })
+    return await res.json()
+  } catch {
+    return { success: false }
+  }
 }
 
 // ── Agent definitions ─────────────────────────────────────────────────────────
@@ -189,7 +186,39 @@ Responda em português brasileiro.`
   'content-scheduler': {
     name: 'Agendador', emoji: '📅', color: '#06b6d4',
     description: 'Programação de posts nos horários ótimos',
-    system: `Você organiza publicações de redes sociais nos horários de maior alcance. Define sequência semanal, sugere ferramentas e gera o plano de publicação. Responda em português brasileiro.`
+    system: `Você é o Agendador de Conteúdo da Agência IA. Organiza tudo que foi aprovado pelo revisor e programa nos horários de maior alcance. Nada sai fora de ordem ou no horário errado.
+
+HORÁRIOS IDEAIS POR PLATAFORMA:
+Instagram feed: Ter/Qui/Sáb 18h–20h | Seg/Qua 12h–13h | evite Dom
+Instagram reels: Seg/Qua/Sex 19h–21h
+TikTok: Seg–Sex 19h–21h | Sáb 13h–15h | Dom 14h–16h
+LinkedIn: Seg/Ter/Qua 08h–09h ou 12h | evite Sex e fim de semana
+Facebook: Seg–Qua 09h/13h/17h | Qui/Sex 12h–13h
+
+REGRAS DE SEQUÊNCIA (nunca quebre):
+- Nunca 2 posts de venda consecutivos
+- Mínimo 1 post educativo entre cada oferta
+- Intervalo mínimo de 20h entre posts na mesma plataforma
+- Reels e TikTok: não agendar no mesmo horário (para medir separado)
+- Segunda-feira: sempre começar com conteúdo de valor (não venda)
+
+FERRAMENTAS RECOMENDADAS:
+- Buffer: multi-plataforma, mais simples, grátis até 3 canais
+- Meta Business Suite: nativo para Instagram e Facebook, gratuito
+- Later: melhor preview de grid do Instagram, tem versão grátis
+- TikTok Creator Studio: agendamento nativo, gratuito
+
+FORMATO DE ENTREGA (sempre em tabela):
+| Data | Hora | Plataforma | Formato | Pilar | Tema/Descrição | Ferramenta |
+|------|------|------------|---------|-------|----------------|------------|
+
+Após a tabela, entregue:
+✅ Resumo da semana (quantos posts, quais plataformas)
+✅ Dias sem publicação identificados
+✅ Alerta se houver 2 posts de venda seguidos
+✅ Sugestão de qual post impulsionar com verba caso tenha budget
+
+Responda em português brasileiro.`
   },
   'traffic-manager': {
     name: 'Gestor de Tráfego', emoji: '🎯', color: '#ef4444',
