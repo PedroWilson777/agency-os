@@ -206,7 +206,7 @@ app.post('/api/run', async (req, res) => {
       break
 
     } catch (err) {
-      const isOverloaded = err.message?.includes('overloaded') || err.status === 529
+      const isOverloaded = err.status === 529 || err.message?.toLowerCase().includes('overload') || err.error?.type === 'overloaded_error' || JSON.stringify(err).includes('overloaded')
       console.error(`Tentativa ${attempt} falhou: ${err.message}`)
 
       if (isOverloaded && attempt < MAX_RETRIES) {

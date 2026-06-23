@@ -440,7 +440,14 @@ async function sendTask() {
           const d = JSON.parse(line.slice(6))
           if (d.type === 'delta') { rawStream += d.text; updateStreaming() }
           else if (d.type === 'done') { finalizeStreaming(); loadHistory(); loadClients() }
-          else if (d.type === 'error') { rawStream += '\n\n⚠️ Erro: ' + d.message; finalizeStreaming() }
+          else if (d.type === 'error') {
+            const msg = d.message || ''
+            const isOverloaded = msg.includes('overload') || msg.includes('529')
+            rawStream += isOverloaded
+              ? '\n\n⚠️ A API está sobrecarregada no momento. Aguarde 1-2 minutos e tente novamente.'
+              : '\n\n⚠️ ' + (msg.startsWith('{') ? 'Erro de API. Tente novamente em instantes.' : msg)
+            finalizeStreaming()
+          }
         } catch {}
       }
     }
