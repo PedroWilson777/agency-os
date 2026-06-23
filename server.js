@@ -99,7 +99,47 @@ Ao qualificar, colete: nome da empresa, segmento, presença digital, objetivo pr
   'site-builder-auto': {
     name: 'Criador de Sites', emoji: '🌐', color: '#f97316',
     description: 'Site completo gerado a partir do Instagram',
-    system: `Você cria sites profissionais completos para empresas brasileiras. Se receber imagem do perfil do Instagram, logo ou fotos do negócio, use-as para definir o estilo e cores do site. Gere HTML/CSS/JS completo em um único arquivo index.html, responsivo, com SEO e botão WhatsApp. Responda em português brasileiro.`
+    system: `Você é um especialista em criar sites profissionais completos para pequenas e médias empresas brasileiras. Seu processo tem 4 etapas obrigatórias:
+
+ETAPA 1 — COLETA DE DADOS
+Se receber um @handle ou URL do Instagram, use WebFetch para acessar a página e extraia:
+- Nome da empresa (meta og:title ou title da página)
+- Bio completa (meta description)
+- Categoria do negócio
+- Link na bio (WhatsApp, linktree, etc.)
+- Destaques do perfil (inferidos pelo contexto)
+- Cidade/localização mencionada na bio
+Se o perfil for privado ou não conseguir acessar, peça ao usuário: nome da empresa, segmento, serviços, WhatsApp, endereço e estilo visual preferido.
+
+ETAPA 2 — DECISÃO VISUAL
+Com base no segmento, defina paleta e tipografia:
+- Barbearia: cores escuras + dourado, fonte bold
+- Saúde/Clínica: azul + branco + verde, fonte limpa
+- Alimentação: vermelho/laranja quente, fonte convidativa
+- Fitness/Academia: preto + laranja, fonte energética
+- Beleza/Estética: tons rosados/roxos, fonte elegante
+- Imobiliária: azul escuro + dourado, fonte sofisticada
+- Tech/B2B: azul slate + índigo, fonte moderna
+
+ETAPA 3 — GERAÇÃO DO HTML COMPLETO
+REGRAS INVIOLÁVEIS:
+1. Gere SEMPRE o HTML do <!DOCTYPE html> até </html> sem nada faltando
+2. Use APENAS os dados reais do cliente — NUNCA deixe [placeholder] no output
+3. Inclua SEMPRE o botão WhatsApp flutuante verde (#25d366) com o número real
+4. Use APENAS fontes do Google Fonts e CSS puro (sem frameworks externos)
+5. O site deve ser responsivo mobile-first
+6. O bloco de código deve começar EXATAMENTE com \`\`\`html e terminar com \`\`\`
+7. Gere pelo menos: Navbar + Hero + Sobre + Serviços (3+) + Depoimentos + Contato + Footer
+8. SEO completo: title tag com cidade, meta description 155 chars, schema LocalBusiness
+
+ETAPA 4 — CONFIRMAÇÃO
+Após o bloco HTML, informe:
+- Quantas seções foram geradas
+- Número de WhatsApp conectado
+- Cidade otimizada no SEO
+- Que o deploy será feito automaticamente no Vercel
+
+Responda sempre em português brasileiro. O site é o produto final — ele PRECISA funcionar perfeitamente ao abrir no navegador.`
   },
   'metrics-analyst': {
     name: 'Analista de Métricas', emoji: '📊', color: '#84cc16',
@@ -214,8 +254,15 @@ app.post('/api/run', async (req, res) => {
       // Se for site-builder, tenta extrair HTML e fazer deploy no Vercel
       if (agentId === 'site-builder-auto' && process.env.VERCEL_TOKEN) {
         try {
-          const htmlMatch = fullResult.match(/```html\n([\s\S]*?)```/) || fullResult.match(/<!DOCTYPE html[\s\S]*?<\/html>/i)
-          const htmlContent = htmlMatch ? (htmlMatch[1] || htmlMatch[0]) : null
+          // Tenta extrair o HTML de várias formas
+          let htmlContent = null
+          const codeBlock = fullResult.match(/```html\n?([\s\S]*?)```/)
+          if (codeBlock) {
+            htmlContent = codeBlock[1].trim()
+          } else {
+            const rawHtml = fullResult.match(/(<!DOCTYPE html[\s\S]*?<\/html>)/i)
+            if (rawHtml) htmlContent = rawHtml[1].trim()
+          }
           if (htmlContent) {
             send({ type: 'delta', text: '\n\n---\n🚀 **Fazendo deploy no Vercel automaticamente...**\n' })
             const siteName = (clientName || 'site-agencia-ia').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '').slice(0, 40)
