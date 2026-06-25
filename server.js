@@ -418,6 +418,10 @@ REGRAS INVIOLÁVEIS:
 6. O bloco de código deve começar EXATAMENTE com \`\`\`html e terminar com \`\`\`
 7. Gere pelo menos: Navbar + Hero + Sobre + Serviços (3+) + Depoimentos + Contato + Footer
 8. SEO completo: title tag com cidade, meta description 155 chars, schema LocalBusiness
+9. NÃO TENTE buscar imagens do Instagram — o Instagram BLOQUEIA requisições externas
+10. Use CSS gradients, formas SVG e cores da marca para criar visual bonito SEM imagens externas
+11. Para "fotos", use divs com gradiente + ícone SVG + comentário <!-- Substitua por foto real -->
+12. O sistema fará deploy automático no Vercel após você gerar o HTML completo
 
 ETAPA 4 — CONFIRMAÇÃO
 Após o bloco HTML, informe:
@@ -495,6 +499,35 @@ app.put('/api/clients/:id', async (req, res) => {
   } catch (e) { res.status(500).json({ success: false, error: e.message }) }
 })
 
+// ── API: Leads (from Excel) ───────────────────────────────────────────────────
+const LEADS_FILE = path.join(DATA_DIR, 'leads.json')
+if (!fs.existsSync(LEADS_FILE)) fs.writeFileSync(LEADS_FILE, '[]')
+function readLeads() { try { return JSON.parse(fs.readFileSync(LEADS_FILE, 'utf8')) } catch { return [] } }
+function writeLeads(l) { fs.writeFileSync(LEADS_FILE, JSON.stringify(l, null, 2)) }
+
+app.get('/api/leads', (req, res) => res.json(readLeads()))
+
+app.post('/api/leads', (req, res) => {
+  const { leads } = req.body
+  if (!Array.isArray(leads)) return res.status(400).json({ error: 'leads deve ser array' })
+  const existing = readLeads()
+  const merged = [...existing]
+  let added = 0
+  leads.forEach(l => {
+    const dup = merged.find(e => e.whatsapp === l.whatsapp || e.nome === l.nome)
+    if (!dup) { merged.push({ ...l, id: Date.now() + Math.random(), status: 'novo', created_at: new Date().toISOString() }); added++ }
+  })
+  writeLeads(merged)
+  res.json({ success: true, added, total: merged.length })
+})
+
+app.put('/api/leads/:id/status', (req, res) => {
+  const leads = readLeads()
+  const idx = leads.findIndex(l => String(l.id) === req.params.id)
+  if (idx !== -1) { leads[idx].status = req.body.status; writeLeads(leads) }
+  res.json({ success: true })
+})
+
 // ── API: Run agent (SSE streaming) ───────────────────────────────────────────
 app.post('/api/run', async (req, res) => {
   const { agentId, message, clientName, image } = req.body // image = { data: base64, mediaType: 'image/jpeg' }
@@ -568,41 +601,61 @@ app.post('/api/run', async (req, res) => {
       if (idx !== -1) { all[idx].result = fullResult; all[idx].status = 'completed'; all[idx].finished_at = new Date().toISOString() }
       writeTasks(all)
 
-      // Se for site-builder, tenta extrair HTML e fazer deploy no Vercel
+      // Se for site-builder, extrai HTML e faz deploy no Vercel
       if (agentId === 'site-builder-auto' && process.env.VERCEL_TOKEN) {
         try {
-          // Tenta extrair o HTML de várias formas
+          // Extrai HTML do resultado — tenta várias variações do bloco de código
           let htmlContent = null
-          const codeBlock = fullResult.match(/```html\n?([\s\S]*?)```/)
-          if (codeBlock) {
-            htmlContent = codeBlock[1].trim()
-          } else {
-            const rawHtml = fullResult.match(/(<!DOCTYPE html[\s\S]*?<\/html>)/i)
-            if (rawHtml) htmlContent = rawHtml[1].trim()
+          const patterns = [
+            /```html\n([\s\S]*?)```/i,
+            /```HTML\n([\s\S]*?)```/i,
+            /```\n(<!DOCTYPE[\s\S]*?)```/i,
+            /(<!DOCTYPE html[\s\S]*?<\/html>)/i
+          ]
+          for (const p of patterns) {
+            const m = fullResult.match(p)
+            if (m && m[1] && m[1].trim().length > 200) { htmlContent = m[1].trim(); break }
           }
-          if (htmlContent) {
-            send({ type: 'delta', text: '\n\n---\n🚀 **Fazendo deploy no Vercel automaticamente...**\n' })
-            const siteName = (clientName || 'site-agencia-ia').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '').slice(0, 40)
+
+          if (!htmlContent) {
+            send({ type: 'delta', text: '\n\n⚠️ **HTML não encontrado no output.** O agente não gerou um bloco de código completo. Tente novamente pedindo: "Cria o site completo em bloco HTML"' })
+          } else {
+            send({ type: 'delta', text: '\n\n---\n🚀 **Deploy no Vercel iniciado...**\n' })
+            const siteName = (clientName || message || 'site')
+              .toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+              .replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '').slice(0, 35) + '-' + Date.now().toString().slice(-5)
+
+            // Vercel API v13 — envia como base64
+            const b64 = Buffer.from(htmlContent, 'utf8').toString('base64')
             const deployRes = await fetch('https://api.vercel.com/v13/deployments', {
               method: 'POST',
-              headers: { Authorization: `Bearer ${process.env.VERCEL_TOKEN}`, 'Content-Type': 'application/json' },
+              headers: {
+                Authorization: `Bearer ${process.env.VERCEL_TOKEN}`,
+                'Content-Type': 'application/json'
+              },
               body: JSON.stringify({
-                name: `${siteName}-${Date.now()}`,
-                files: [{ file: 'index.html', data: htmlContent }],
+                name: siteName,
+                files: [{ file: 'index.html', data: b64, encoding: 'base64' }],
                 projectSettings: { framework: null },
                 target: 'production'
               })
             })
+
             const deployData = await deployRes.json()
+            console.log('Vercel deploy response:', JSON.stringify(deployData).slice(0, 300))
+
             if (deployData.url) {
               const siteUrl = `https://${deployData.url}`
-              send({ type: 'delta', text: `✅ **Site no ar!**\n\n🔗 [${siteUrl}](${siteUrl})\n\nCompartilhe esse link com o cliente — o site já está funcionando!` })
-              if (idx !== -1) { all[idx].site_url = siteUrl; all[idx].result += `\n\nSite deployado: ${siteUrl}` }
+              send({ type: 'delta', text: `\n✅ **Site no ar!**\n\n🔗 **${siteUrl}**\n\nEnvie esse link para o cliente — o site já está funcionando e responsivo!\n\n📋 **Próximos passos para personalizar:**\n- Substituir fotos placeholder por fotos reais do cliente\n- Adicionar link do Google Maps real\n- Configurar domínio próprio (opcional)` })
+              if (idx !== -1) { all[idx].site_url = siteUrl }
               writeTasks(all)
+            } else if (deployData.error) {
+              send({ type: 'delta', text: `\n⚠️ Vercel erro: ${deployData.error.message || JSON.stringify(deployData.error)}` })
             }
           }
         } catch (vercelErr) {
           console.error('Vercel deploy error:', vercelErr.message)
+          send({ type: 'delta', text: `\n⚠️ Erro no deploy: ${vercelErr.message}` })
         }
       }
 

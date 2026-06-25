@@ -4,6 +4,7 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
   <title>Agency OS</title>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.mini.min.js"></script>
   <style>
     *{margin:0;padding:0;box-sizing:border-box}
     body{background:#0a0a0f;color:#e2e8f0;font-family:'Inter',system-ui,sans-serif;height:100vh;display:flex;overflow:hidden}
@@ -88,6 +89,15 @@
     .input-wrap:focus-within{border-color:#8b5cf6}
     .upload-btn{background:transparent;border:none;color:#64748b;cursor:pointer;font-size:16px;padding:2px 4px;transition:color .15s;align-self:flex-end;margin-bottom:2px}
     .upload-btn:hover{color:#a78bfa}
+    .excel-btn{background:transparent;border:none;color:#64748b;cursor:pointer;font-size:15px;padding:2px 4px;transition:color .15s;align-self:flex-end;margin-bottom:2px}
+    .excel-btn:hover{color:#22c55e}
+    /* LEADS MODAL */
+    .leads-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:10px}
+    .leads-table th{background:#2d2d40;padding:6px 10px;text-align:left;color:#94a3b8;font-weight:600}
+    .leads-table td{padding:6px 10px;border-bottom:1px solid #1e1e2e;color:#cdd6f4}
+    .leads-table tr:hover td{background:#1e1e2e}
+    .leads-count{font-size:12px;color:#64748b;margin-top:6px}
+    .badge-novo{background:#22c55e20;color:#22c55e;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600}
     .task-input{flex:1;background:transparent;border:none;outline:none;color:#e2e8f0;font-size:13.5px;resize:none;min-height:22px;max-height:120px;line-height:1.5;font-family:inherit}
     .task-input::placeholder{color:#475569}
     .send-btn{background:#8b5cf6;border:none;border-radius:8px;padding:6px 14px;color:#fff;cursor:pointer;font-size:13px;font-weight:600;transition:all .15s;align-self:flex-end;white-space:nowrap}
@@ -182,8 +192,10 @@
       <button class="image-remove" onclick="removeImage()" title="Remover imagem">✕</button>
     </div>
     <div class="input-wrap">
-      <button class="upload-btn" onclick="document.getElementById('fileInput').click()" title="Enviar imagem">📎</button>
+      <button class="upload-btn" onclick="document.getElementById('fileInput').click()" title="Enviar imagem para análise">📎</button>
+      <button class="excel-btn" onclick="document.getElementById('excelInput').click()" title="Importar leads do Excel">📋</button>
       <input type="file" id="fileInput" accept="image/*" onchange="handleImageUpload(event)"/>
+      <input type="file" id="excelInput" accept=".xlsx,.xls,.csv" onchange="handleExcelUpload(event)"/>
       <textarea class="task-input" id="taskInput" placeholder="Mande uma tarefa ou envie uma imagem para o agente analisar..." rows="1"></textarea>
       <button class="send-btn" id="sendBtn" onclick="sendTask()">Enviar →</button>
     </div>
@@ -196,6 +208,22 @@
   <div class="history-header">Histórico de Tarefas</div>
   <div class="history-list" id="historyList">
     <div class="history-empty">Nenhuma tarefa ainda</div>
+  </div>
+</div>
+
+<!-- MODAL: Leads Excel -->
+<div class="modal-overlay" id="leadsModal">
+  <div class="modal" style="width:680px;max-width:95vw">
+    <div class="modal-title">
+      <button class="modal-close" onclick="closeLeadsModal()">✕</button>
+      📋 Leads importados da planilha
+    </div>
+    <div id="leadsPreview"></div>
+    <div id="leadsCount" class="leads-count"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeLeadsModal()">Cancelar</button>
+      <button class="btn-save" id="saveLeadsBtn" onclick="saveLeads()">Salvar Leads →</button>
+    </div>
   </div>
 </div>
 
@@ -343,6 +371,78 @@ async function saveNewClient() {
 function showNcError(msg) {
   const el = document.getElementById('nc-error')
   el.textContent = msg; el.style.display = 'block'
+}
+
+// ── Excel upload ──────────────────────────────────────────────────────────────
+let pendingLeads = []
+
+function handleExcelUpload(e) {
+  const file = e.target.files[0]
+  if (!file) return
+  const reader = new FileReader()
+  reader.onload = ev => {
+    try {
+      const wb = XLSX.read(ev.target.result, { type: 'array' })
+      const ws = wb.Sheets[wb.SheetNames[0]]
+      const rows = XLSX.utils.sheet_to_json(ws, { defval: '' })
+      if (!rows.length) { alert('Planilha vazia ou formato inválido'); return }
+
+      // Normaliza colunas — aceita vários nomes de cabeçalho
+      pendingLeads = rows.map((r, i) => ({
+        nome: r['Nome'] || r['nome'] || r['NOME'] || r['Name'] || `Lead ${i+1}`,
+        empresa: r['Empresa'] || r['empresa'] || r['EMPRESA'] || r['Company'] || '',
+        segmento: r['Segmento'] || r['segmento'] || r['Nicho'] || r['nicho'] || '',
+        whatsapp: String(r['WhatsApp'] || r['Whatsapp'] || r['whatsapp'] || r['Telefone'] || r['telefone'] || r['Phone'] || '').replace(/\D/g,''),
+        necessidade: r['Necessidade'] || r['necessidade'] || r['Serviço'] || r['servico'] || r['Observação'] || r['obs'] || '',
+        email: r['Email'] || r['email'] || r['E-mail'] || ''
+      }))
+
+      // Mostra preview
+      document.getElementById('leadsPreview').innerHTML = `
+        <div style="max-height:340px;overflow-y:auto">
+          <table class="leads-table">
+            <thead><tr>
+              <th>Nome</th><th>Empresa</th><th>Segmento</th><th>WhatsApp</th><th>Necessidade</th>
+            </tr></thead>
+            <tbody>${pendingLeads.slice(0,50).map(l => `<tr>
+              <td>${escHtml(l.nome)}</td>
+              <td>${escHtml(l.empresa)}</td>
+              <td>${escHtml(l.segmento)}</td>
+              <td>${l.whatsapp || '<span style="color:#f87171">—</span>'}</td>
+              <td style="max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(l.necessidade)}</td>
+            </tr>`).join('')}</tbody>
+          </table>
+        </div>`
+      document.getElementById('leadsCount').textContent = `${pendingLeads.length} leads encontrados na planilha${pendingLeads.length > 50 ? ' (mostrando primeiros 50)' : ''}`
+      document.getElementById('leadsModal').classList.add('show')
+    } catch(err) { alert('Erro ao ler planilha: ' + err.message) }
+  }
+  reader.readAsArrayBuffer(file)
+  e.target.value = ''
+}
+
+function closeLeadsModal() {
+  document.getElementById('leadsModal').classList.remove('show')
+  pendingLeads = []
+}
+
+async function saveLeads() {
+  if (!pendingLeads.length) return
+  const btn = document.getElementById('saveLeadsBtn')
+  btn.disabled = true; btn.textContent = 'Salvando...'
+  try {
+    const r = await fetch(`${API}/api/leads`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ leads: pendingLeads })
+    })
+    const data = await r.json()
+    closeLeadsModal()
+    appendSystemMsg(`✅ ${data.added} leads importados! Total na base: ${data.total}. Use o Agente de Vendas para iniciar a prospecção.`)
+  } catch(err) {
+    alert('Erro ao salvar: ' + err.message)
+  }
+  btn.disabled = false; btn.textContent = 'Salvar Leads →'
 }
 
 // ── Image upload ──────────────────────────────────────────────────────────────
